@@ -1,6 +1,3 @@
-# Copyright (C) 2024 Andrew Wason
-# SPDX-License-Identifier: MIT
-
 import asyncio
 import warnings
 from collections.abc import Callable
@@ -42,7 +39,7 @@ class MCPToolkit(BaseToolkit):
             MCPTool(
                 toolkit=self,
                 name=tool.name,
-                description=tool.description or '',,
+                description=tool.description or '',
                 args_schema=create_schema_model(tool.inputSchema),
             )
             for tool in self._tools.tools
