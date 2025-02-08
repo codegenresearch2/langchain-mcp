@@ -39,7 +39,7 @@ class MCPToolkit(BaseToolkit):
             MCPTool(
                 session=self.session,
                 name=tool.name,
-                description=tool.description,
+                description=tool.description or '', # Ensure description is set to an empty string if it is None
                 args_schema=create_schema_model(tool.inputSchema),
             )
             for tool in self._tools.tools
