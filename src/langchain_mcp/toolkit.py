@@ -39,7 +39,7 @@ class MCPToolkit(BaseToolkit):
             MCPTool(
                 session=self.session,
                 name=tool.name,
-                description=tool.description or '',,
+                description=tool.description,
                 args_schema=create_schema_model(tool.inputSchema),
             )
             for tool in self._tools.tools
