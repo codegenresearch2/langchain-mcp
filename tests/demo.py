@@ -22,7 +22,7 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(prompt: str, tools: list[BaseTool]) -> str:
+async def run(tools: list[BaseTool], prompt: str) -> str:
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  // requires GROQ_API_KEY
     server_params = StdioServerParameters(
         command="npx",
@@ -46,7 +46,7 @@ async def run(prompt: str, tools: list[BaseTool]) -> str:
 
 
 async def main(prompt: str, tools: list[BaseTool]) -> None:
-    response = await run(prompt, tools)
+    response = await run(tools, prompt)
     print(response)
 
 
