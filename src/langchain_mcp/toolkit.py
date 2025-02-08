@@ -9,7 +9,7 @@ import pydantic
 import pydantic_core
 import typing_extensions as t
 from langchain_core.tools.base import BaseTool, BaseToolkit, ToolException
-from mcp import ClientSession
+from mcp import ClientSession, ListToolsResult, Tool
 
 
 class MCPToolkit(BaseToolkit):
@@ -20,27 +20,26 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     '''The MCP session used to obtain the tools'''    
 
-    _tools: list[BaseTool] = []
+    _tools: ListToolsResult | None = None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
     async def initialize(self):
-        await self.session.initialize()
-        self._tools = [
-            MCPTool(
-                toolkit=self,
-                name=tool.name,
-                description=tool.description or "",
-                args_schema=create_schema_model(tool.inputSchema),
-            )
-            for tool in (await self.session.list_tools()).tools
-        ]
-        self._initialized = True
+        '''
+        Initialize the MCP toolkit by setting up the session and retrieving the tools.
+        '''
+        if self._tools is None:
+            await self.session.initialize()
+            self._tools = await self.session.list_tools()
 
     async def get_tools(self) -> list[BaseTool]:
-        if not self._initialized:
+        '''
+        Get the list of tools from the MCP session.
+        '''
+        if self._tools is None:
             raise RuntimeError("MCPToolkit has not been initialized. Please call initialize() first.")
-        return self._tools
+        return [MCPTool(toolkit=self, name=tool.name, description=tool.description or "", args_schema=create_schema_model(tool.inputSchema))
+                for tool in self._tools.tools]
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
