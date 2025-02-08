@@ -20,16 +20,13 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     '''The MCP session used to obtain the tools'''    
 
-    _initialized: bool = False
+    _tools: list[BaseTool] = []
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    async def get_tools(self) -> list[BaseTool]:
-        if not self._initialized:
-            await self.session.initialize()
-            self._initialized = True
-
-        return [
+    async def initialize(self):
+        await self.session.initialize()
+        self._tools = [
             MCPTool(
                 toolkit=self,
                 name=tool.name,
@@ -38,6 +35,12 @@ class MCPToolkit(BaseToolkit):
             )
             for tool in (await self.session.list_tools()).tools
         ]
+        self._initialized = True
+
+    async def get_tools(self) -> list[BaseTool]:
+        if not self._initialized:
+            raise RuntimeError("MCPToolkit has not been initialized. Please call initialize() first.")
+        return self._tools
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
@@ -48,11 +51,14 @@ def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
 
         @t.override
         @classmethod
-        def model_json_schema(cls,
-                               by_alias: bool = True,
-                               ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE,
-                               schema_generator: type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema,
-                               mode: pydantic.json_schema.JsonSchemaMode = "validation"):
+        def model_json_schema(
+            cls,
+            by_alias: bool = True,
+            ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE,
+            schema_generator: type[pydantic.json_schema.GenerateJsonSchema]
+            = pydantic.json_schema.GenerateJsonSchema,
+            mode: pydantic.json_schema.JsonSchemaMode = "validation",
+        ) -> dict[str, t.Any]:
             return schema
 
     return Schema
