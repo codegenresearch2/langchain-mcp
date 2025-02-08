@@ -37,9 +37,9 @@ class MCPToolkit(BaseToolkit):
             raise RuntimeError('MCPToolkit has not been initialized. Please call initialize() first.')
         return [
             MCPTool(
-                toolkit=self,
+                session=self.session,
                 name=tool.name,
-                description=tool.description or '',
+                description=tool.description or '',,
                 args_schema=create_schema_model(tool.inputSchema),
             )
             for tool in self._tools.tools
@@ -72,8 +72,13 @@ class MCPTool(BaseTool):
     MCP server tool
     '''
 
+    session: ClientSession
     toolkit: MCPToolkit
     handle_tool_error: bool | str | Callable[[ToolException], str] | None = True
+
+    def __init__(self, session: ClientSession, **kwargs):
+        super().__init__(**kwargs)
+        self.session = session
 
     @t.override
     def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -85,7 +90,7 @@ class MCPTool(BaseTool):
 
     @t.override
     async def _arun(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        result = await self.toolkit.session.call_tool(self.name, arguments=kwargs)
+        result = await self.session.call_tool(self.name, arguments=kwargs)
         content = pydantic_core.to_json(result.content).decode()
         if result.isError:
             raise ToolException(content)
