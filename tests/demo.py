@@ -22,7 +22,7 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(prompt: str, tools: list) -> str:
+async def run(prompt: str, tools: list[BaseTool]) -> str:
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  // requires GROQ_API_KEY
     server_params = StdioServerParameters(
         command="npx",
@@ -36,7 +36,7 @@ async def run(prompt: str, tools: list) -> str:
             tools_model = model.bind_tools(tools)
             messages = [HumanMessage(content=prompt)]
             ai_message = await tools_model.ainvoke(messages)
-            messages.append(ai_message)
+            messages.append(t.cast(AIMessage, ai_message))
             for tool_call in ai_message.tool_calls:
                 selected_tool = tools_map[tool_call["name"].lower()]
                 tool_msg = await selected_tool.ainvoke(tool_call)
@@ -45,12 +45,11 @@ async def run(prompt: str, tools: list) -> str:
             return result
 
 
-async def main(prompt: str, tools: list) -> None:
+async def main(prompt: str, tools: list[BaseTool]) -> None:
     response = await run(prompt, tools)
     print(response)
 
 
 if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
-    tools = []  # Assuming tools are initialized elsewhere
-    asyncio.run(main(prompt, tools))
+    asyncio.run(main(prompt, []))  // Assuming tools are initialized elsewhere
