@@ -22,11 +22,10 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(prompt: str, session: ClientSession) -> str:
+async def run(prompt: str, tools: list) -> str:
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
-    toolkit = MCPToolkit(session=session)
+    toolkit = MCPToolkit(session=ClientSession())
     await toolkit.initialize()
-    tools = await toolkit.get_tools()
     tools_map = {tool.name: tool for tool in tools}
     tools_model = model.bind_tools(tools)
     messages = [HumanMessage(content=prompt)]
@@ -40,17 +39,19 @@ async def run(prompt: str, session: ClientSession) -> str:
     return result
 
 
-async def main() -> None:
-    prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
+async def main(prompt: str) -> None:
     server_params = StdioServerParameters(
         command="npx",
         args=["-y", "@modelcontextprotocol/server-filesystem", str(pathlib.Path(__file__).parent.parent)],
     )
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
-            result = await run(prompt, session)
+            toolkit = MCPToolkit(session=session)
+            tools = await toolkit.get_tools()
+            result = await run(prompt, tools)
             print(result)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
+    asyncio.run(main(prompt))
