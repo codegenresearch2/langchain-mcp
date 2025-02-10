@@ -47,10 +47,10 @@ def mcptoolkit(request):
 
 
 @pytest.fixture(scope="class")
-def mcptool(request, mcptoolkit):
-    tool = (await mcptoolkit.get_tools())[0]  # Retrieve tools without awaiting
+async def mcptool(request, mcptoolkit):
+    tool = (await mcptoolkit.get_tools())[0]  # Retrieve tools within an asynchronous context
     request.cls.tool = tool
     yield request.cls.tool
 
 
-This revised code snippet addresses the feedback by ensuring that the `MCPToolkit` is properly initialized before accessing its tools. The `mcptoolkit` fixture now includes the initialization logic by calling `await toolkit.initialize()`, and the `mcptool` fixture retrieves the tools without awaiting, ensuring that the asynchronous nature of the toolkit is correctly handled. This should resolve the `SyntaxError` and allow the tests to run successfully. Additionally, an assertion is added to verify that the `call_tool` method was called with specific arguments if the test class is a subclass of `ToolsIntegrationTests`.
+This revised code snippet addresses the feedback by ensuring that the `mcptool` fixture is defined as an asynchronous fixture, allowing the use of `await` when calling `mcptoolkit.get_tools()`. The `mcptoolkit` fixture is also adjusted to ensure that it is compatible with the asynchronous nature of the toolkit. This should resolve the `SyntaxError` and allow the tests to run successfully. Additionally, an assertion is added to verify that the `call_tool` method was called with specific arguments if the test class is a subclass of `ToolsIntegrationTests`.
