@@ -20,28 +20,21 @@ class MCPToolkit(BaseToolkit):
 
     session: ClientSession = pydantic.Field(..., description="The MCP session used to obtain the tools")
     _tools: ListToolsResult | None = None
-    _initialized: bool = False
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, session: ClientSession):
-        super().__init__(session=session)
-
     async def initialize(self) -> None:
         """
-        Initializes the MCPToolkit by listing tools and setting the _initialized flag.
+        Initializes the MCPToolkit by listing tools.
         """
-        if not self._initialized:
+        if self._tools is None:
             await self.session.initialize()
             self._tools = await self.session.list_tools()
-            self._initialized = True
 
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
         """
         Retrieves the list of tools from the MCP session.
         """
-        if not self._initialized:
-            raise RuntimeError("MCPToolkit must be initialized before accessing tools.")
         if self._tools is None:
             raise RuntimeError("Tools have not been retrieved. Please initialize the toolkit.")
         return [
