@@ -18,9 +18,7 @@ class MCPToolkit(BaseToolkit):
     MCP server toolkit
     """
 
-    session: ClientSession
-    """The MCP session used to obtain the tools"""
-
+    session: ClientSession = pydantic.Field(..., description="The MCP session used to obtain the tools")
     _tools: ListToolsResult | None = None
     _initialized: bool = False
 
@@ -38,7 +36,6 @@ class MCPToolkit(BaseToolkit):
             self._tools = await self.get_tools()
             self._initialized = True
 
-    @t.override
     async def get_tools(self) -> ListToolsResult:  # type: ignore[override]
         """
         Retrieves the list of tools from the MCP session.
