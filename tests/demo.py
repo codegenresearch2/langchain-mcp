@@ -22,7 +22,7 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(prompt: str, tools: list) -> str:
+async def run(prompt: str, tools: list[BaseTool]) -> str:
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
     toolkit = MCPToolkit(session=ClientSession())
     await toolkit.initialize()
@@ -32,7 +32,7 @@ async def run(prompt: str, tools: list) -> str:
     ai_message = await tools_model.ainvoke(messages)
     messages.append(ai_message)
     for tool_call in ai_message.tool_calls:
-        selected_tool = tools_map[tool_call.tool.name.lower()]
+        selected_tool = tools_map[tool_call.tool.name]
         tool_msg = await selected_tool.ainvoke(tool_call.tool.arguments)
         messages.append(tool_msg)
     result = await (tools_model | StrOutputParser()).ainvoke(messages)
