@@ -21,46 +21,43 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     """The MCP session used to obtain the tools"""
 
+    _tools: ListToolsResult | None = None
+    _initialized: bool = False
+
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
     def __init__(self, session: ClientSession):
         self.session = session
-        self._tools = None
 
     async def initialize(self) -> None:
-        if self._tools is None:
+        """
+        Initializes the MCPToolkit by listing tools and setting the _initialized flag.
+        """
+        if not self._initialized:
             await self.session.initialize()
             self._tools = await self.get_tools()
+            self._initialized = True
 
     @t.override
     async def get_tools(self) -> ListToolsResult:  # type: ignore[override]
+        """
+        Retrieves the list of tools from the MCP session.
+        """
         if self._tools is None:
             raise RuntimeError("MCPToolkit has not been initialized.")
-        return ListToolsResult(tools=[
-            Tool(
-                name="read_file",
-                description=(
-                    "Read the complete contents of a file from the file system. Handles various text encodings "
-                    "and provides detailed error messages if the file cannot be read. "
-                    "Use this tool when you need to examine the contents of a single file. "
-                    "Only works within allowed directories."
-                ),
-                inputSchema={
-                    "type": "object",
-                    "properties": {"path": {"type": "string"}},
-                    "required": ["path"],
-                    "additionalProperties": False,
-                    "$schema": "http://json-schema.org/draft-07/schema#",
-                },
-            )
-        ])
+        return self._tools
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
+    """
+    Creates a Pydantic model from a JSON schema.
+    """
     class Schema(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
         @t.override
         @classmethod
-        def model_json_schema(cls, by_alias: bool = True, ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE) -> dict[str, t.Any]:
+        def model_json_schema(cls, by_alias: bool = True, ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE, schema_generator: type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema, mode: pydantic.json_schema.JsonSchemaMode = "validation") -> dict[str, t.Any]:
             return schema
 
     return Schema
