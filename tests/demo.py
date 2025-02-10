@@ -48,8 +48,8 @@ async def main(prompt: str) -> None:
         async with ClientSession(read, write) as session:
             toolkit = MCPToolkit(session=session)
             tools = await toolkit.get_tools()
-            result = await run(prompt, tools)
-            print(result)
+            response = await run(prompt, tools)
+            print(response)
 
 
 if __name__ == "__main__":
