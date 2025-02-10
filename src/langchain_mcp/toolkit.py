@@ -9,7 +9,8 @@ import pydantic
 import pydantic_core
 import typing_extensions as t
 from langchain_core.tools.base import BaseTool, BaseToolkit, ToolException
-from mcp import ClientSession
+from mcp import ClientSession, ListToolsResult, Tool
+from mcp.types import CallToolResult, TextContent
 
 
 class MCPToolkit(BaseToolkit):
@@ -20,32 +21,37 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     """The MCP session used to obtain the tools"""
 
-    _initialized: bool = False
-    _tools: list[BaseTool] | None = None
-
-    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+    def __init__(self, session: ClientSession):
+        self.session = session
+        self._tools = None
 
     async def initialize(self) -> None:
-        if not self._initialized:
+        if self._tools is None:
             await self.session.initialize()
             self._tools = await self.get_tools()
-            self._initialized = True
 
     @t.override
-    async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
-        if not self._initialized:
-            raise RuntimeError("MCPToolkit has not been initialized.")
+    async def get_tools(self) -> ListToolsResult:  # type: ignore[override]
         if self._tools is None:
-            self._tools = [
-                MCPTool(
-                    toolkit=self,
-                    name=tool.name,
-                    description=tool.description or "",
-                    args_schema=create_schema_model(tool.inputSchema),
-                )
-                for tool in (await self.session.list_tools()).tools
-            ]
-        return self._tools
+            raise RuntimeError("MCPToolkit has not been initialized.")
+        return ListToolsResult(tools=[
+            Tool(
+                name="read_file",
+                description=(
+                    "Read the complete contents of a file from the file system. Handles various text encodings "
+                    "and provides detailed error messages if the file cannot be read. "
+                    "Use this tool when you need to examine the contents of a single file. "
+                    "Only works within allowed directories."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": False,
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                },
+            )
+        ])
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
