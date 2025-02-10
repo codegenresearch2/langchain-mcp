@@ -47,9 +47,9 @@ def mcptoolkit(request):
 
 
 @pytest.fixture(scope="class")
-async def mcptool(request, mcptoolkit):
-    tools = await mcptoolkit.get_tools()  # Retrieve tools without awaiting
-    request.cls.tool = tools[0]
+def mcptool(request, mcptoolkit):
+    tool = (await mcptoolkit.get_tools())[0]  # Retrieve tools without awaiting
+    request.cls.tool = tool
     yield request.cls.tool
 
 
