@@ -26,19 +26,15 @@ class MCPToolkit(BaseToolkit):
 
     def __init__(self, session: ClientSession):
         super().__init__(session=session)
-        self.initialize()
 
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """
         Initializes the MCPToolkit by listing tools and setting the _initialized flag.
         """
         if not self._initialized:
-            asyncio.run(self._initialize_async())
-
-    async def _initialize_async(self) -> None:
-        await self.session.initialize()
-        self._tools = await self.session.list_tools()
-        self._initialized = True
+            await self.session.initialize()
+            self._tools = await self.session.list_tools()
+            self._initialized = True
 
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
         """
