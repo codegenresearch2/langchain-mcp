@@ -14,7 +14,7 @@ import pathlib
 import sys
 import typing as t
 
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import BaseTool
 from langchain_groq import ChatGroq
@@ -30,7 +30,7 @@ async def run(tools: list[BaseTool], prompt: str) -> str:
     await toolkit.initialize()
     tools_map = {tool.name: tool for tool in tools}
     tools_model = model.bind_tools(tools)
-    messages: list[BaseMessage] = [HumanMessage(content=prompt)]
+    messages = [HumanMessage(content=prompt)]
     ai_message = await tools_model.ainvoke(messages[-1])
     t.cast(AIMessage, ai_message)  # Explicitly cast to AIMessage
     messages.append(ai_message)
