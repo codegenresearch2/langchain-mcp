@@ -29,7 +29,10 @@ class MCPToolkit(BaseToolkit):
             await self.session.initialize()
             self._tools = await self.session.list_tools()
 
-    async def get_tools(self) -> list[BaseTool]:
+    async def get_tools(self) -> List[BaseTool]:
+        """
+        Get the list of tools from the toolkit.
+        """
         if self._tools is None:
             raise RuntimeError("Toolkit has not been initialized. Call `initialize` first.")
         return [
@@ -57,7 +60,7 @@ def create_schema_model(schema: dict[str, t.Any]) -> Type[pydantic.BaseModel]:
             cls,
             by_alias: bool = True,
             ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE,
-            schema_generator: type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema,
+            schema_generator: Type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema,
             mode: pydantic.json_schema.JsonSchemaMode = "validation",
         ) -> dict[str, t.Any]:
             return schema
