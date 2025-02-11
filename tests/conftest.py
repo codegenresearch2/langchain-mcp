@@ -11,8 +11,8 @@ from mcp.types import CallToolResult, TextContent
 from langchain_mcp import MCPToolkit
 
 
-@pytest.fixture(scope="class", async=True)
-async def mcptoolkit():
+@pytest.fixture(scope="class")
+def mcptoolkit(request):
     session_mock = mock.AsyncMock(spec=ClientSession)
     session_mock.list_tools.return_value = ListToolsResult(
         tools=[
@@ -39,13 +39,13 @@ async def mcptoolkit():
         isError=False,
     )
     toolkit = MCPToolkit(session=session_mock)
-    await toolkit.initialize()
     yield toolkit
+    # Add assertion to check if call_tool was called with the expected arguments
+    session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
 
 
 @pytest.fixture(scope="class")
 async def mcptool(request, mcptoolkit):
-    await mcptoolkit.initialize()
     tools = await mcptoolkit.get_tools()
     request.cls.tool = tools[0]
     yield request.cls.tool
