@@ -2,14 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 from unittest import mock
-
 import pytest
 from langchain_tests.integration_tests import ToolsIntegrationTests
 from mcp import ClientSession, ListToolsResult, Tool
 from mcp.types import CallToolResult, TextContent
-
 from langchain_mcp import MCPToolkit
-
 
 @pytest.fixture(scope="class")
 def mcptoolkit(request):
@@ -42,24 +39,20 @@ def mcptoolkit(request):
     request.cls.toolkit = toolkit
     yield toolkit
 
-    # Assertions in the fixture
-    assert session_mock.call_tool.called, "The `call_tool` method was not called"
-    assert session_mock.call_tool.call_count == 1, "The `call_tool` method was called more than once"
-    assert session_mock.call_tool.call_args[1]['tool'] == "read_file" and session_mock.call_tool.call_args[1]['arguments'] == {"path": "LICENSE"}, "The `call_tool` method was not called with the correct arguments"
-
+    if issubclass(request.cls, ToolsIntegrationTests):
+        assert session_mock.call_tool.called, "The `call_tool` method was not called"
+        assert session_mock.call_tool.call_count == 1, "The `call_tool` method was called more than once"
+        assert session_mock.call_tool.call_args[1]['tool'] == "read_file" and session_mock.call_tool.call_args[1]['arguments'] == {"path": "LICENSE"}, "The `call_tool` method was not called with the correct arguments"
 
 @pytest.fixture(scope="class")
 async def mcptool(request, mcptoolkit):
     await mcptoolkit.initialize()  # Initialization method call
     tools = await mcptoolkit.get_tools()
-    if not tools:
-        pytest.fail("No tools available")
     request.cls.tool = tools[0]
     yield request.cls.tool
 
-    # Assertions in the fixture
-    assert request.cls.tool.name == "read_file", "The tool retrieved is not the expected tool"
-
+    if issubclass(request.cls, ToolsIntegrationTests):
+        assert request.cls.tool.name == "read_file", "The tool retrieved is not the expected tool"
 
 @pytest.mark.usefixtures("mcptoolkit")
 class TestMCPToolIntegration(ToolsIntegrationTests):
@@ -70,7 +63,6 @@ class TestMCPToolIntegration(ToolsIntegrationTests):
     @property
     def tool_invoke_params_example(self) -> dict:
         return {"path": "LICENSE"}
-
 
 @pytest.mark.usefixtures("mcptoolkit")
 class TestMCPToolUnit(ToolsIntegrationTests):
