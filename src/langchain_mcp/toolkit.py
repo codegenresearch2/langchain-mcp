@@ -21,30 +21,47 @@ class MCPToolkit(BaseToolkit):
     """The MCP session used to obtain the tools"""
 
     _initialized: bool = False
+    _tools: list[BaseTool] | None = None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    async def initialize_toolkit(self) -> None:
+    def initialize(self) -> None:
+        """
+        Initializes the toolkit by calling the session's initialize method if not already initialized.
+        """
         if not self._initialized:
-            await self.session.initialize()
+            asyncio.run(self.session.initialize())
             self._initialized = True
+            self._tools = asyncio.run(self.get_tools())
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
-        await self.initialize_toolkit()
-
-        return [
-            MCPTool(
-                toolkit=self,
-                name=tool.name,
-                description=tool.description or "",
-                args_schema=create_schema_model(tool.inputSchema),
-            )
-            for tool in (await self.session.list_tools()).tools
-        ]
+        if not self._initialized:
+            raise ValueError("Toolkit not initialized. Call initialize() first.")
+        if self._tools is None:
+            self._tools = [
+                MCPTool(
+                    toolkit=self,
+                    name=tool.name,
+                    description=tool.description or "",
+                    args_schema=create_schema_model(tool.inputSchema),
+                    session=self.session,
+                )
+                for tool in (await self.session.list_tools()).tools
+            ]
+        return self._tools
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
+    """
+    Creates a Pydantic model class from a JSON schema.
+    
+    Args:
+        schema (dict): The JSON schema to convert to a Pydantic model.
+    
+    Returns:
+        type[pydantic.BaseModel]: The Pydantic model class.
+    """
     class Schema(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
@@ -62,18 +79,19 @@ class MCPTool(BaseTool):
     """
 
     toolkit: MCPToolkit
+    session: ClientSession
     handle_tool_error: bool | str | Callable[[ToolException], str] | None = True
 
     @t.override
     def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         warnings.warn(
-            "Invoke this tool asynchronousely using `ainvoke`. This method exists only to satisfy tests.", stacklevel=1
+            "Invoke this tool asynchronously using `ainvoke`. This method exists only to satisfy tests.", stacklevel=1
         )
         return asyncio.run(self._arun(*args, **kwargs))
 
     @t.override
     async def _arun(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        result = await self.toolkit.session.call_tool(self.name, arguments=kwargs)
+        result = await self.session.call_tool(self.name, arguments=kwargs)
         content = pydantic_core.to_json(result.content).decode()
         if result.isError:
             raise ToolException(content)
