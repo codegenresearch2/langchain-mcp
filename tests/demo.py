@@ -22,7 +22,7 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def process_tools(toolkit: MCPToolkit, model: ChatGroq, prompt: str) -> str:
+async def run(toolkit: MCPToolkit, model: ChatGroq, prompt: str) -> str:
     tools = await toolkit.get_tools()
     tools_map = {tool.name: tool for tool in tools}
     tools_model = model.bind_tools(tools)
@@ -47,8 +47,8 @@ async def main(prompt: str) -> None:
         async with ClientSession(read, write) as session:
             toolkit = MCPToolkit(session=session)
             await toolkit.initialize()  # Initialize the toolkit before use
-            result = await process_tools(toolkit, model, prompt)
-            print(result)
+            response = await run(toolkit, model, prompt)
+            print(response)
 
 
 if __name__ == "__main__":
