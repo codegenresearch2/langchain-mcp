@@ -56,7 +56,7 @@ class MCPToolkit(BaseToolkit):
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
     """
     Create a Pydantic model from a JSON schema.
-    This function is used to generate a Pydantic model class from a given JSON schema.
+    This function generates a Pydantic model class from a given JSON schema.
     """
 
     class Schema(pydantic.BaseModel):
