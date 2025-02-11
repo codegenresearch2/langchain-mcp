@@ -69,7 +69,7 @@ async def mcptool(request, mcptoolkit):
         content=[TextContent(type="text", text="MIT License\n\nCopyright (c) 2024 Andrew Wason\n")],
         isError=False,
     )
-    yield Tool(name="read_file", description="Read the complete contents of a file from the file system...", inputSchema={"path": {"type": "string"}})
+    yield request.cls.tool
 
 @pytest.mark.usefixtures("mcptoolkit")
 class TestMCPToolIntegration(ToolsIntegrationTests):
