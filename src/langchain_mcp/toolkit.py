@@ -20,7 +20,7 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     """The MCP session used to obtain the tools"""
 
-    _tools: list[BaseTool] = []
+    _tools: list[BaseTool] | None = None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
@@ -28,21 +28,22 @@ class MCPToolkit(BaseToolkit):
         """
         Initializes the toolkit by fetching the tools from the MCP session.
         """
-        await self.session.initialize()
-        self._tools = [
-            MCPTool(
-                toolkit=self,
-                session=self.session,  # Pass the session to MCPTool constructor
-                name=tool.name,
-                description=tool.description or "",
-                args_schema=create_schema_model(tool.inputSchema),
-            )
-            for tool in (await self.session.list_tools()).tools
-        ]
+        if self._tools is None:
+            await self.session.initialize()
+            self._tools = [
+                MCPTool(
+                    toolkit=self,
+                    session=self.session,  # Pass the session to MCPTool constructor
+                    name=tool.name,
+                    description=tool.description or "",
+                    args_schema=create_schema_model(tool.inputSchema),
+                )
+                for tool in (await self.session.list_tools()).tools
+            ]
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
-        if not self._tools:
+        if self._tools is None:
             raise RuntimeError("Tools have not been initialized. Please call initialize() first.")
         return self._tools
 
