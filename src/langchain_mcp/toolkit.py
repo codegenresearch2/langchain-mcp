@@ -33,7 +33,7 @@ class MCPToolkit(BaseToolkit):
 
     async def get_tools(self) -> list[BaseTool]:
         if not self._initialized:
-            raise RuntimeError("MCPToolkit has not been initialized. Please call initialize() first.")
+            raise RuntimeError("Must initialize the toolkit first.")
         if not self._tools:
             raise RuntimeError("No tools available. Please check the initialization status.")
         return [
@@ -50,6 +50,7 @@ class MCPToolkit(BaseToolkit):
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
     """
     Create a Pydantic model from a JSON schema.
+    This function is used to generate a Pydantic model class from a given JSON schema.
     """
 
     class Schema(pydantic.BaseModel):
