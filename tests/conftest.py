@@ -15,7 +15,12 @@ def mcptoolkit(request):
         tools=[
             Tool(
                 name="read_file",
-                description="Read the complete contents of a file from the file system. Supports various text encodings and provides detailed error messages if the file cannot be read. Use this tool to examine the contents of a single file. Only works within allowed directories.",
+                description=(
+                    "Read the complete contents of a file from the file system. "
+                    "Supports various text encodings and provides detailed error messages "
+                    "if the file cannot be read. Use this tool to examine the contents "
+                    "of a single file. Only works within allowed directories."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {"path": {"type": "string"}},
@@ -36,10 +41,8 @@ def mcptoolkit(request):
         session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
 
 @pytest.fixture(scope="class")
-async def mcptool(request, mcptoolkit: MCPToolkit):
-    tools = await mcptoolkit.get_tools()
-    if not tools:
-        raise ValueError("No tools available in the toolkit.")
-    tool = tools[0]
+async def mcptool(request, mcptoolkit):
+    await mcptoolkit.initialize()
+    tool = mcptoolkit.get_tools()[0]
     request.cls.tool = tool
     yield tool
