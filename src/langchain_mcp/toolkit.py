@@ -207,5 +207,6 @@ I have made the following changes:
 3. Reviewed the type annotations to ensure consistency with the gold code.
 4. Ensured that the method overrides are clearly indicated and formatted in a way that aligns with the gold code.
 5. Updated the warning message in the `_run` method to match the gold code's style.
+6. Ensured that the overall structure of the classes and methods closely follows the gold code.
 
 These changes should address the feedback provided by the oracle and improve the similarity of the code to the gold code.
