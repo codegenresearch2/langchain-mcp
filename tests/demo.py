@@ -12,13 +12,14 @@ from mcp.client.stdio import stdio_client
 
 from langchain_mcp import MCPToolkit
 
-async def run(tools: list[BaseTool], prompt: str) -> str:
+async def run(tools: t.List[BaseTool], prompt: str) -> str:
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
     tools_model = model.bind_tools(tools)
     tools_map = {tool.name: tool for tool in tools}
     messages = [HumanMessage(content=prompt)]
-    messages.append(t.cast(AIMessage, await tools_model.ainvoke(messages)))
-    for tool_call in messages[-1].tool_calls:
+    ai_message = t.cast(AIMessage, await tools_model.ainvoke(messages))
+    messages.append(ai_message)
+    for tool_call in ai_message.tool_calls:
         selected_tool = tools_map[tool_call["name"].lower()]
         tool_msg = await selected_tool.ainvoke(tool_call)
         messages.append(tool_msg)
