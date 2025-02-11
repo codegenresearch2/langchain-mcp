@@ -14,8 +14,8 @@ import pathlib
 import sys
 import typing as t
 
-from langchain_core.messages import HumanMessage, BaseMessage
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.tools import BaseTool
 from langchain_groq import ChatGroq
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -23,10 +23,10 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit, Tool
 
 
-async def run(tools: t.List[t.BaseTool], model: ChatGroq, prompt: str) -> str:
+async def run(tools: list[BaseTool], model: ChatGroq, prompt: str) -> str:
     tools_map = {tool.name: tool for tool in tools}
-    messages: t.List[BaseMessage] = [HumanMessage(content=prompt)]
-    ai_message = await model.ainvoke([messages[0]])
+    messages: list[BaseMessage] = [HumanMessage(content=prompt)]
+    ai_message = await t.cast(AIMessage, model.ainvoke([messages[0]]))
     messages.append(ai_message)
     for tool_call in ai_message.tool_calls:
         selected_tool = tools_map[tool_call["name"].lower()]
