@@ -23,7 +23,7 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(prompt: str, tools: t.List, model: ChatGroq, session: ClientSession) -> str:
+async def run(tools: t.List, prompt: str, model: ChatGroq, session: ClientSession) -> str:
     toolkit = MCPToolkit(session=session)
     await toolkit.initialize()
     tools_map = {tool.name: tool for tool in tools}
@@ -31,8 +31,8 @@ async def run(prompt: str, tools: t.List, model: ChatGroq, session: ClientSessio
     ai_message = await model.ainvoke([messages[0]])
     messages.append(ai_message)
     for tool_call in ai_message.tool_calls:
-        selected_tool = tools_map[tool_call.tool.name.lower()]
-        tool_message = await selected_tool.ainvoke(tool_call.tool.arguments)
+        selected_tool = tools_map[tool_call["name"].lower()]
+        tool_message = await selected_tool.ainvoke(tool_call["arguments"])
         messages.append(tool_message)
     result = await (model | StrOutputParser()).ainvoke(messages)
     return result
@@ -47,7 +47,7 @@ async def main(prompt: str) -> None:
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             tools = await toolkit.get_tools()
-            result = await run(prompt, tools, model, session)
+            result = await run(tools, prompt, model, session)
             print(result)
 
 
