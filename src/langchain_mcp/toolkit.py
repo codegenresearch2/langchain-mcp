@@ -1,7 +1,7 @@
 import asyncio
 import warnings
 from collections.abc import Callable
-from typing import List, Type
+from typing import List
 
 import pydantic
 import pydantic_core
@@ -29,7 +29,7 @@ class MCPToolkit(BaseToolkit):
             await self.session.initialize()
             self._tools = await self.session.list_tools()
 
-    async def get_tools(self) -> List[BaseTool]:
+    async def get_tools(self) -> list[BaseTool]:
         """
         Get the list of tools from the toolkit.
         """
@@ -46,7 +46,7 @@ class MCPToolkit(BaseToolkit):
             for tool in self._tools.tools
         ]
 
-def create_schema_model(schema: dict[str, t.Any]) -> Type[pydantic.BaseModel]:
+def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
     """
     Create a new model class that returns our JSON schema.
     LangChain requires a BaseModel class.
@@ -60,7 +60,7 @@ def create_schema_model(schema: dict[str, t.Any]) -> Type[pydantic.BaseModel]:
             cls,
             by_alias: bool = True,
             ref_template: str = pydantic.json_schema.DEFAULT_REF_TEMPLATE,
-            schema_generator: Type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema,
+            schema_generator: type[pydantic.json_schema.GenerateJsonSchema] = pydantic.json_schema.GenerateJsonSchema,
             mode: pydantic.json_schema.JsonSchemaMode = "validation",
         ) -> dict[str, t.Any]:
             return schema
@@ -93,6 +93,6 @@ class MCPTool(BaseTool):
 
     @t.override
     @property
-    def tool_call_schema(self) -> Type[pydantic.BaseModel]:
+    def tool_call_schema(self) -> type[pydantic.BaseModel]:
         assert self.args_schema is not None  # noqa: S101
         return self.args_schema
