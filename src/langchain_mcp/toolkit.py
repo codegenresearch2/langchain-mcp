@@ -50,6 +50,15 @@ class MCPToolkit(BaseToolkit):
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
+    """
+    Creates a Pydantic model class from a JSON schema.
+    
+    Args:
+        schema (dict): The JSON schema to convert to a Pydantic model.
+    
+    Returns:
+        type[pydantic.BaseModel]: The Pydantic model class.
+    """
     class Schema(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
