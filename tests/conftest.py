@@ -40,7 +40,6 @@ def mcptoolkit(request):
     )
     toolkit = MCPToolkit(session=session_mock)
     yield toolkit
-    # Check if the class is a subclass of ToolsIntegrationTests before asserting
     if issubclass(request.cls, ToolsIntegrationTests):
         session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
 
