@@ -12,9 +12,8 @@
 import asyncio
 import pathlib
 import sys
-import typing as t
 
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 from mcp import ClientSession, StdioServerParameters
@@ -23,11 +22,12 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def run(tools: t.List, prompt: str, model: ChatGroq, session: ClientSession) -> str:
+async def run(tools, prompt, session):
     toolkit = MCPToolkit(session=session)
     await toolkit.initialize()
     tools_map = {tool.name: tool for tool in tools}
-    messages: t.List[t.Union[HumanMessage, AIMessage]] = [HumanMessage(content=prompt)]
+    messages = [HumanMessage(content=prompt)]
+    model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)
     ai_message = await model.ainvoke([messages[0]])
     messages.append(ai_message)
     for tool_call in ai_message.tool_calls:
@@ -38,16 +38,16 @@ async def run(tools: t.List, prompt: str, model: ChatGroq, session: ClientSessio
     return result
 
 
-async def main(prompt: str) -> None:
-    model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
+async def main(prompt):
     server_params = StdioServerParameters(
         command="npx",
         args=["-y", "@modelcontextprotocol/server-filesystem", str(pathlib.Path(__file__).parent.parent)],
     )
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
+            toolkit = MCPToolkit(session=session)
             tools = await toolkit.get_tools()
-            result = await run(tools, prompt, model, session)
+            result = await run(tools, prompt, session)
             print(result)
 
 
