@@ -39,7 +39,7 @@ class MCPToolkit(BaseToolkit):
         Get the list of tools from the MCP session.
         """
         if not self._initialized:
-            raise RuntimeError("The toolkit must be initialized first.")
+            raise RuntimeError("Must initialize the toolkit first.")
         if not self._tools:
             raise RuntimeError("No tools available. Please check the initialization status.")
         return [
@@ -100,7 +100,7 @@ class MCPTool(BaseTool):
     def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
         Run the tool asynchronously.
-        This method exists only to satisfy standard tests.
+        This method exists only to satisfy tests.
         """
         warnings.warn(
             "Invoke this tool asynchronously using `ainvoke`. This method exists only to satisfy tests.", stacklevel=1
