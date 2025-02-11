@@ -12,6 +12,7 @@
 import asyncio
 import pathlib
 import sys
+import typing as t
 
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -19,10 +20,10 @@ from langchain_groq import ChatGroq
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from langchain_mcp import MCPToolkit
+from langchain_mcp import MCPToolkit, BaseTool
 
 
-async def run(tools, prompt, session):
+async def run(tools: t.List[BaseTool], prompt: str, session: ClientSession) -> str:
     toolkit = MCPToolkit(session=session)
     await toolkit.initialize()
     tools_map = {tool.name: tool for tool in tools}
@@ -37,15 +38,14 @@ async def run(tools, prompt, session):
     return result
 
 
-async def main(prompt):
+async def main(prompt: str) -> None:
     server_params = StdioServerParameters(
         command="npx",
         args=["-y", "@modelcontextprotocol/server-filesystem", str(pathlib.Path(__file__).parent.parent)],
     )
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
-            toolkit = MCPToolkit(session=session)
-            tools = await toolkit.get_tools()
+            tools = await MCPToolkit(session=session).get_tools()
             result = await run(tools, prompt, session)
             print(result)
 
