@@ -20,7 +20,6 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     """The MCP session used to obtain the tools"""
 
-    _initialized: bool = False
     _tools: list[BaseTool] = []
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
@@ -29,23 +28,22 @@ class MCPToolkit(BaseToolkit):
         """
         Initializes the toolkit by fetching the tools from the MCP session.
         """
-        if not self._initialized:
-            self._tools = [
-                MCPTool(
-                    toolkit=self,
-                    name=tool.name,
-                    description=tool.description or "",
-                    args_schema=create_schema_model(tool.inputSchema),
-                )
-                for tool in (await self.session.list_tools()).tools
-            ]
-            self._initialized = True
+        await self.session.initialize()
+        self._tools = [
+            MCPTool(
+                toolkit=self,
+                session=self.session,  # Pass the session to MCPTool constructor
+                name=tool.name,
+                description=tool.description or "",
+                args_schema=create_schema_model(tool.inputSchema),
+            )
+            for tool in (await self.session.list_tools()).tools
+        ]
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
-        if not self._initialized:
-            await self.initialize()
-
+        if not self._tools:
+            raise RuntimeError("Tools have not been initialized. Please call initialize() first.")
         return self._tools
 
 
@@ -67,10 +65,12 @@ class MCPTool(BaseTool):
     """
 
     toolkit: MCPToolkit
+    session: ClientSession
     handle_tool_error: bool | str | Callable[[ToolException], str] | None = True
 
-    def __init__(self, session: ClientSession, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, toolkit: MCPToolkit, session: ClientSession, name: str, description: str, args_schema: type[pydantic.BaseModel]):
+        super().__init__(name=name, description=description, args_schema=args_schema)
+        self.toolkit = toolkit
         self.session = session
 
     @t.override
