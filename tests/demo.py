@@ -19,11 +19,10 @@ from langchain_groq import ChatGroq
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from langchain_mcp import MCPToolkit
+from langchain_mcp import MCPToolkit, Tool
 
 
-async def run(toolkit: MCPToolkit, model: ChatGroq, prompt: str) -> str:
-    tools = await toolkit.get_tools()
+async def run(tools: list[Tool], model: ChatGroq, prompt: str) -> str:
     tools_map = {tool.name: tool for tool in tools}
     tools_model = model.bind_tools(tools)
     messages = [HumanMessage(content=prompt)]
@@ -47,7 +46,8 @@ async def main(prompt: str) -> None:
         async with ClientSession(read, write) as session:
             toolkit = MCPToolkit(session=session)
             await toolkit.initialize()  # Initialize the toolkit before use
-            response = await run(toolkit, model, prompt)
+            tools = await toolkit.get_tools()
+            response = await run(tools, model, prompt)
             print(response)
 
 
