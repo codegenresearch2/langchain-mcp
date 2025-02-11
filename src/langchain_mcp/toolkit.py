@@ -39,7 +39,7 @@ class MCPToolkit(BaseToolkit):
         Get the list of tools from the MCP session.
         """
         if not self._initialized:
-            raise RuntimeError("Must initialize the toolkit first.")
+            raise RuntimeError("The toolkit must be initialized first.")
         if not self._tools:
             raise RuntimeError("No tools available. Please check the initialization status.")
         return [
