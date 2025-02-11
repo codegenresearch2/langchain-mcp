@@ -9,7 +9,8 @@ import pydantic
 import pydantic_core
 import typing_extensions as t
 from langchain_core.tools.base import BaseTool, BaseToolkit, ToolException
-from mcp import ClientSession
+from mcp import ClientSession, ListToolsResult, Tool
+from mcp.types import CallToolResult, TextContent
 
 
 class MCPToolkit(BaseToolkit):
@@ -21,35 +22,35 @@ class MCPToolkit(BaseToolkit):
     """The MCP session used to obtain the tools"""
 
     _initialized: bool = False
-    _tools: list[BaseTool] | None = None
+    _tools: ListToolsResult | None = None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         """
         Initializes the toolkit by calling the session's initialize method if not already initialized.
         """
         if not self._initialized:
-            asyncio.run(self.session.initialize())
+            await self.session.initialize()
             self._initialized = True
-            self._tools = asyncio.run(self.get_tools())
+            self._tools = await self.session.list_tools()
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
         if not self._initialized:
-            raise ValueError("Toolkit not initialized. Call initialize() first.")
+            raise RuntimeError("Toolkit not initialized. Call initialize() first.")
         if self._tools is None:
-            self._tools = [
-                MCPTool(
-                    toolkit=self,
-                    name=tool.name,
-                    description=tool.description or "",
-                    args_schema=create_schema_model(tool.inputSchema),
-                    session=self.session,
-                )
-                for tool in (await self.session.list_tools()).tools
-            ]
-        return self._tools
+            self._tools = await self.session.list_tools()
+        return [
+            MCPTool(
+                toolkit=self,
+                name=tool.name,
+                description=tool.description or "",
+                args_schema=create_schema_model(tool.inputSchema),
+                session=self.session,
+            )
+            for tool in self._tools.tools
+        ]
 
 
 def create_schema_model(schema: dict[str, t.Any]) -> type[pydantic.BaseModel]:
