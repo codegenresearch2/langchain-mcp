@@ -26,12 +26,18 @@ class MCPToolkit(BaseToolkit):
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
     async def initialize(self) -> None:
+        """
+        Initialize the MCPToolkit by fetching the tools if not already initialized.
+        """
         if not self._initialized:
             await self.session.initialize()
             self._tools = await self.session.list_tools()
             self._initialized = True
 
     async def get_tools(self) -> list[BaseTool]:
+        """
+        Get the list of tools from the MCP session.
+        """
         if not self._initialized:
             raise RuntimeError("Must initialize the toolkit first.")
         if not self._tools:
@@ -84,11 +90,18 @@ class MCPTool(BaseTool):
 
     @property
     def tool_call_schema(self) -> type[pydantic.BaseModel]:
+        """
+        Get the schema for the tool call.
+        """
         assert self.args_schema is not None  # noqa: S101
         return self.args_schema
 
     @t.override
     def _run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """
+        Run the tool asynchronously.
+        This method exists only to satisfy standard tests.
+        """
         warnings.warn(
             "Invoke this tool asynchronously using `ainvoke`. This method exists only to satisfy tests.", stacklevel=1
         )
