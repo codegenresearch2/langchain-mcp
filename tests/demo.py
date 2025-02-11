@@ -3,7 +3,7 @@ import pathlib
 import sys
 import typing as t
 
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools.base import BaseTool
 from langchain_groq import ChatGroq
@@ -13,17 +13,17 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 async def run(tools: list[BaseTool], prompt: str) -> str:
-    model = ChatGroq(model="llama-3.1-8b-instant")  # requires GROQ_API_KEY
+    model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
     tools_model = model.bind_tools(tools)
     tools_map = {tool.name: tool for tool in tools}
     messages = [HumanMessage(content=prompt)]
-    messages.append(t.cast(BaseMessage, await tools_model.ainvoke(messages)))
+    messages.append(t.cast(AIMessage, await tools_model.ainvoke(messages)))
     for tool_call in messages[-1].tool_calls:
         selected_tool = tools_map[tool_call["name"].lower()]
         tool_msg = await selected_tool.ainvoke(tool_call)
         messages.append(tool_msg)
-    result = await (tools_model | StrOutputParser()).ainvoke(messages)
-    return result
+    response = await (tools_model | StrOutputParser()).ainvoke(messages)
+    return response
 
 async def main(prompt: str) -> None:
     server_params = StdioServerParameters(
@@ -34,8 +34,8 @@ async def main(prompt: str) -> None:
         async with ClientSession(read, write) as session:
             toolkit = MCPToolkit(session=session)
             await toolkit.initialize()
-            result = await run(toolkit.get_tools(), prompt)
-            print(result)
+            response = await run(toolkit.get_tools(), prompt)
+            print(response)
 
 if __name__ == "__main__":
     prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
