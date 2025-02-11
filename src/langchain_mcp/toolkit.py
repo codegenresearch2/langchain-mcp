@@ -23,7 +23,7 @@ class MCPToolkit(BaseToolkit):
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         if not self._initialized:
             await self.session.initialize()
             self._tools = [
@@ -36,7 +36,6 @@ class MCPToolkit(BaseToolkit):
                 for tool in (await self.session.list_tools()).tools
             ]
             self._initialized = True
-        return None
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:  # type: ignore[override]
@@ -91,13 +90,13 @@ class MCPTool(BaseTool):
 
 
 ### Explanation of Changes:
-1. **Initialization Logic**: Changed the initialization flag to use `_tools` as `None` initially and check for it in the `initialize` method.
+1. **Initialization Logic**: Changed the initialization flag to use `_tools` as `None` initially and check for this condition in the `initialize` method.
 
 2. **Session Initialization**: Ensured that the session is properly initialized before retrieving the tools.
 
 3. **Return Types**: Modified the `initialize` method to return `None` explicitly.
 
-4. **Error Handling**: Updated the error message in `get_tools` to be more descriptive and indicate that initialization must occur before accessing the tools.
+4. **Error Handling**: Updated the error message in `get_tools` to be more descriptive and indicate that the toolkit must be initialized before accessing the tools.
 
 5. **Tool Creation Logic**: Ensured that the `session` attribute is passed correctly when creating instances of `MCPTool`.
 
