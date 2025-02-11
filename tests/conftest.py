@@ -18,8 +18,8 @@ def mcptoolkit(request):
                 description=(
                     "Read the complete contents of a file from the file system. "
                     "Supports various text encodings and provides detailed error messages "
-                    "if the file cannot be read. Use this tool to examine the contents "
-                    "of a single file. Only works within allowed directories."
+                    "if the file cannot be read. Use this tool to examine the contents of a "
+                    "single file. Only works within allowed directories."
                 ),
                 inputSchema={
                     "type": "object",
