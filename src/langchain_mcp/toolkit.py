@@ -1,7 +1,7 @@
 import asyncio
 import warnings
 from collections.abc import Callable
-from typing import List, Type, Optional
+from typing import List, Type
 
 import pydantic
 import pydantic_core
@@ -17,13 +17,12 @@ class MCPToolkit(BaseToolkit):
     session: ClientSession
     """The MCP session used to obtain the tools"""
 
-    _initialized: bool = False
-    _tools: Optional[List[BaseTool]] = None
+    _tools: List[BaseTool] = None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
     async def initialize(self) -> None:
-        if not self._initialized:
+        if self._tools is None:
             await self.session.initialize()
             self._tools = [
                 MCPTool(
@@ -35,14 +34,17 @@ class MCPToolkit(BaseToolkit):
                 )
                 for tool in (await self.session.list_tools()).tools
             ]
-            self._initialized = True
 
-    async def get_tools(self) -> List[BaseTool]:
-        if not self._initialized:
-            raise RuntimeError("Toolkit has not been initialized. Call `initialize` first.")
+    async def get_tools(self) -> list[BaseTool]:
+        if self._tools is None:
+            await self.initialize()
         return self._tools
 
 def create_schema_model(schema: dict[str, t.Any]) -> Type[pydantic.BaseModel]:
+    """
+    Create a new model class that returns our JSON schema.
+    LangChain requires a BaseModel class.
+    """
     class Schema(pydantic.BaseModel):
         model_config = pydantic.ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
@@ -85,5 +87,6 @@ class MCPTool(BaseTool):
     @t.override
     @property
     def tool_call_schema(self) -> Type[pydantic.BaseModel]:
+        # noqa: S101
         assert self.args_schema is not None
         return self.args_schema
