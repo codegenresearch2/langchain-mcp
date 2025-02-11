@@ -14,7 +14,7 @@ import pathlib
 import sys
 import typing as t
 
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 from mcp import ClientSession, StdioServerParameters
@@ -35,6 +35,7 @@ async def run(tools: t.List[BaseTool], prompt: str) -> str:
             tools = await toolkit.get_tools()
             tools_map = {tool.name: tool for tool in tools}
             model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)
+            model.bind_tools(tools)
             messages = [HumanMessage(content=prompt)]
             ai_message = await model.ainvoke(messages)
             messages.append(ai_message)
@@ -47,7 +48,8 @@ async def run(tools: t.List[BaseTool], prompt: str) -> str:
 
 
 async def main(prompt: str) -> None:
-    result = await run([], prompt)
+    tools = await MCPToolkit().get_tools()
+    result = await run(tools, prompt)
     print(result)
 
 
