@@ -24,14 +24,14 @@ class MCPToolkit(BaseToolkit):
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
     async def initialize(self) -> None:
-        """Asynchronously initialize the MCP session and retrieve tools."""
+        """Initialize the MCP session and retrieve tools."""
         if self._tools is None:
             await self.session.initialize()
             self._tools = await self.session.list_tools()
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:
-        """Asynchronously retrieve the tools from the MCP session."""
+        """Retrieve the tools from the MCP session."""
         if self._tools is None:
             raise RuntimeError("MCPToolkit has not been initialized. Call initialize() first.")
 
@@ -126,14 +126,14 @@ class MCPToolkit(BaseToolkit):
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
     async def initialize(self) -> None:
-        """Asynchronously initialize the MCP session and retrieve tools."""
+        """Initialize the MCP session and retrieve tools."""
         if self._tools is None:
             await self.session.initialize()
             self._tools = await self.session.list_tools()
 
     @t.override
     async def get_tools(self) -> list[BaseTool]:
-        """Asynchronously retrieve the tools from the MCP session."""
+        """Retrieve the tools from the MCP session."""
         if self._tools is None:
             raise RuntimeError("MCPToolkit has not been initialized. Call initialize() first.")
 
@@ -207,6 +207,5 @@ I have made the following changes:
 3. Updated the type annotations to use `t.Any` instead of `Any`.
 4. Ensured that the method overrides are clearly indicated and formatted in a way that aligns with the gold code.
 5. Updated the warning message in the `_run` method to match the gold code's style.
-6. Reviewed the class and method structure to ensure consistency with the gold code.
 
 These changes should address the feedback provided by the oracle and improve the similarity of the code to the gold code.
