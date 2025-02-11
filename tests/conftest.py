@@ -40,12 +40,12 @@ def mcptoolkit(request):
     yield toolkit
 
     if issubclass(request.cls, ToolsIntegrationTests):
-        assert session_mock.call_tool.called, "The `call_tool` method was not called"
-        assert session_mock.call_tool.call_args[1]['tool'] == "read_file" and session_mock.call_tool.call_args[1]['arguments'] == {"path": "LICENSE"}, "The `call_tool` method was not called with the correct arguments"
+        session_mock.call_tool.assert_called_with(
+            "read_file", arguments={"path": "LICENSE"}
+        )
 
 @pytest.fixture(scope="class")
 async def mcptool(request, mcptoolkit):
-    await mcptoolkit.initialize()  # Initialization method call
     request.cls.tool = (await mcptoolkit.get_tools())[0]
     yield request.cls.tool
 
