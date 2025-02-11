@@ -12,6 +12,7 @@
 import asyncio
 import pathlib
 import sys
+import typing as t
 
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -22,24 +23,24 @@ from mcp.client.stdio import stdio_client
 from langchain_mcp import MCPToolkit
 
 
-async def process_tools_and_messages(prompt: str, model: ChatGroq, session: ClientSession) -> str:
+async def run(prompt: str, model: ChatGroq, session: ClientSession) -> str:
     toolkit = MCPToolkit(session=session)
     await toolkit.initialize()
     tools = await toolkit.get_tools()
     tools_map = {tool.name: tool for tool in tools}
-    tools_model = model.bind_tools(tools)
-    messages = [HumanMessage(content=prompt)]
-    ai_message = await tools_model.ainvoke([messages[0]])
+    messages: t.List[t.Union[HumanMessage, AIMessage]] = [HumanMessage(content=prompt)]
+    ai_message = await model.ainvoke([messages[0]])
     messages.append(ai_message)
     for tool_call in ai_message.tool_calls:
         selected_tool = tools_map[tool_call.tool.name.lower()]
         tool_message = await selected_tool.ainvoke(tool_call.tool.arguments)
         messages.append(tool_message)
-    result = await (tools_model | StrOutputParser()).ainvoke(messages)
+    result = await (model | StrOutputParser()).ainvoke(messages)
     return result
 
 
-async def main(prompt: str) -> None:
+async def main() -> None:
+    prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
     model = ChatGroq(model="llama-3.1-8b-instant", stop_sequences=None)  # requires GROQ_API_KEY
     server_params = StdioServerParameters(
         command="npx",
@@ -47,10 +48,9 @@ async def main(prompt: str) -> None:
     )
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
-            result = await process_tools_and_messages(prompt, model, session)
+            result = await run(prompt, model, session)
             print(result)
 
 
 if __name__ == "__main__":
-    prompt = sys.argv[1] if len(sys.argv) > 1 else "Read and summarize the file ./LICENSE"
-    asyncio.run(main(prompt))
+    asyncio.run(main())
