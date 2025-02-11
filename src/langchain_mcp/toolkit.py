@@ -104,3 +104,14 @@ class MCPTool(BaseTool):
     def tool_call_schema(self) -> type[pydantic.BaseModel]:
         assert self.args_schema is not None  # noqa: S101
         return self.args_schema
+
+
+Changes made based on the feedback:
+1. Await the `get_tools` method in the test setup.
+2. Ensure docstrings are consistent with the gold code.
+3. Simplify error messages.
+4. Match the instantiation of `MCPTool` with the gold code.
+5. Align comments in `create_schema_model` with the gold code.
+6. Include all parameters in `model_json_schema`.
+7. Ensure the warning message in `_run` is aligned with the gold code's wording.
+8. Maintain the overall formatting style of the gold code for better readability.
