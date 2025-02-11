@@ -28,7 +28,7 @@ class MCPToolkit(BaseToolkit):
     def get_tools(self) -> list[BaseTool]:
         """Retrieve the tools list. Raises an error if the toolkit has not been initialized."""
         if self._tools is None:
-            raise RuntimeError("The toolkit must be initialized before retrieving tools.")
+            raise RuntimeError("Toolkit must be initialized before retrieving tools.")
         return [
             MCPTool(
                 toolkit=self,
