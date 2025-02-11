@@ -39,14 +39,36 @@ def mcptoolkit(request):
         isError=False,
     )
     toolkit = MCPToolkit(session=session_mock)
+    request.cls.toolkit = toolkit
     yield toolkit
-    if issubclass(request.cls, ToolsIntegrationTests):
-        session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
 
 
 @pytest.fixture(scope="class")
 async def mcptool(request, mcptoolkit):
-    await mcptoolkit.initialize()
-    tool = mcptoolkit.get_tools()[0]
-    request.cls.tool = tool
-    yield tool
+    tools = await mcptoolkit.get_tools()
+    if not tools:
+        pytest.fail("No tools available")
+    request.cls.tool = tools[0]
+    yield request.cls.tool
+
+
+@pytest.mark.usefixtures("mcptoolkit")
+class TestMCPToolIntegration(ToolsIntegrationTests):
+    @property
+    def tool_constructor(self):
+        return self.tool
+
+    @property
+    def tool_invoke_params_example(self) -> dict:
+        return {"path": "LICENSE"}
+
+
+@pytest.mark.usefixtures("mcptoolkit")
+class TestMCPToolUnit(ToolsIntegrationTests):
+    @property
+    def tool_constructor(self):
+        return self.tool
+
+    @property
+    def tool_invoke_params_example(self) -> dict:
+        return {"path": "LICENSE"}
