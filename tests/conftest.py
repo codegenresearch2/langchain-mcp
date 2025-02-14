@@ -2,17 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 from unittest import mock
-
 import pytest
 from langchain_tests.integration_tests import ToolsIntegrationTests
 from mcp import ClientSession, ListToolsResult, Tool
 from mcp.types import CallToolResult, TextContent
-
 from langchain_mcp import MCPToolkit
 
-
 @pytest.fixture(scope="class")
-def mcptoolkit(request):
+def mcptoolkit():
     session_mock = mock.AsyncMock(spec=ClientSession)
     session_mock.list_tools.return_value = ListToolsResult(
         tools=[
@@ -39,14 +36,25 @@ def mcptoolkit(request):
         isError=False,
     )
     toolkit = MCPToolkit(session=session_mock)
-    yield toolkit
-    if issubclass(request.cls, ToolsIntegrationTests):
-        session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
-
+    return toolkit
 
 @pytest.fixture(scope="class")
 async def mcptool(request, mcptoolkit):
-    await mcptoolkit.initialize()
-    tool = mcptoolkit.get_tools()[0]
-    request.cls.tool = tool
-    yield tool
+    try:
+        tool = (await mcptoolkit.get_tools())[0]
+        request.cls.tool = tool
+        yield tool
+    except IndexError:
+        pytest.fail("No tools available in the toolkit.")
+
+async def invoke_tool(tool, arguments):
+    try:
+        return await tool.invoke(arguments)
+    except Exception as e:
+        pytest.fail(f"Failed to invoke tool: {str(e)}")
+
+@pytest.mark.usefixtures("mcptool")
+class TestMCPToolIntegration(ToolsIntegrationTests):
+    async def test_tool_invoke(self, mcptoolkit):
+        result = await invoke_tool(self.tool, {"path": "LICENSE"})
+        mcptoolkit.session.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
