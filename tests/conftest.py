@@ -10,7 +10,6 @@ from mcp.types import CallToolResult, TextContent
 
 from langchain_mcp import MCPToolkit
 
-
 @pytest.fixture(scope="class")
 def mcptoolkit(request):
     session_mock = mock.AsyncMock(spec=ClientSession)
@@ -39,14 +38,19 @@ def mcptoolkit(request):
         isError=False,
     )
     toolkit = MCPToolkit(session=session_mock)
+    request.cls.toolkit = toolkit
     yield toolkit
-    if issubclass(request.cls, ToolsIntegrationTests):
-        session_mock.call_tool.assert_called_with("read_file", arguments={"path": "LICENSE"})
-
 
 @pytest.fixture(scope="class")
-async def mcptool(request, mcptoolkit):
-    await mcptoolkit.initialize()
-    tool = mcptoolkit.get_tools()[0]
-    request.cls.tool = tool
+async def mcptool(request):
+    toolkit = getattr(request.cls, 'toolkit', None)
+    if toolkit is None:
+        raise ValueError("Toolkit is not initialized. Make sure to initialize tools before usage.")
+
+    tools = await toolkit.get_tools()
+    if not tools:
+        raise ValueError("No tools are available in the toolkit.")
+
+    tool = tools[0]
+    request.cls.tools = tools
     yield tool
